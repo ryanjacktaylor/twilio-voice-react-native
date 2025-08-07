@@ -1,7 +1,7 @@
 buildscript {
   ext.versions = [
     'java'               : JavaVersion.VERSION_17,
-    'androidGradlePlugin': '8.1.4',
+    'androidGradlePlugin': '7.4.2',
     'googleServices'     : '4.3.10',
     'voiceAndroid'       : '6.7.1',
     'androidxCore'       : '1.12.0',
@@ -60,17 +60,6 @@ android {
     // for buildconfig construction
     buildConfig true
   }
-  
-  // Fix for Gradle 8.x task dependency issues
-  tasks.whenTaskAdded { task ->
-    if (task.name.contains('packageDebugResources') || task.name.contains('packageReleaseResources')) {
-      def variantName = task.name.contains('Debug') ? 'Debug' : 'Release'
-      def generateResValuesTask = tasks.findByName("generate${variantName}ResValues")
-      if (generateResValuesTask) {
-        task.dependsOn generateResValuesTask
-      }
-    }
-  }
 }
 
 repositories {
@@ -112,32 +101,17 @@ dependencies {
 
 // Fix task dependencies for packageDebugResources
 afterEvaluate {
-  tasks.withType(com.android.build.gradle.tasks.MergeResources).configureEach { task ->
-    if (task.name.contains('packageDebugResources')) {
-      def generateDebugResValues = tasks.findByName('generateDebugResValues')
-      if (generateDebugResValues) {
-        task.dependsOn generateDebugResValues
-        task.inputs.files(generateDebugResValues.outputs.files)
-      }
-    } else if (task.name.contains('packageReleaseResources')) {
-      def generateReleaseResValues = tasks.findByName('generateReleaseResValues')
-      if (generateReleaseResValues) {
-        task.dependsOn generateReleaseResValues
-        task.inputs.files(generateReleaseResValues.outputs.files)
-      }
-    }
+  def packageDebugResources = tasks.findByName('packageDebugResources')
+  def generateDebugResValues = tasks.findByName('generateDebugResValues')
+  
+  if (packageDebugResources && generateDebugResValues) {
+    packageDebugResources.dependsOn generateDebugResValues
   }
-}
-
-// Alternative fix using task ordering
-gradle.projectsEvaluated {
-  tasks.matching { task ->
-    task.name.contains('packageDebugResources') || task.name.contains('packageReleaseResources')
-  }.each { task ->
-    def variantName = task.name.contains('Debug') ? 'Debug' : 'Release'
-    def generateResValuesTask = tasks.findByName("generate${variantName}ResValues")
-    if (generateResValuesTask) {
-      task.mustRunAfter generateResValuesTask
-    }
+  
+  def packageReleaseResources = tasks.findByName('packageReleaseResources')
+  def generateReleaseResValues = tasks.findByName('generateReleaseResValues')
+  
+  if (packageReleaseResources && generateReleaseResValues) {
+    packageReleaseResources.dependsOn generateReleaseResValues
   }
 }
