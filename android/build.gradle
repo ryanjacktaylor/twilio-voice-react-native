@@ -98,3 +98,21 @@ dependencies {
     }
   }
 }
+
+// Fix task dependencies for packageDebugResources
+afterEvaluate {
+  def packageDebugResources = tasks.findByName('packageDebugResources')
+  def generateDebugResValues = tasks.findByName('generateDebugResValues')
+  
+  if (packageDebugResources && generateDebugResValues) {
+    packageDebugResources.dependsOn generateDebugResValues
+  }
+  
+  // Also fix for release variant
+  def packageReleaseResources = tasks.findByName('packageReleaseResources')
+  def generateReleaseResValues = tasks.findByName('generateReleaseResValues')
+  
+  if (packageReleaseResources && generateReleaseResValues) {
+    packageReleaseResources.dependsOn generateReleaseResValues
+  }
+}
