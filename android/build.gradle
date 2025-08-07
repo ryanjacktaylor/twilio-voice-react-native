@@ -60,6 +60,17 @@ android {
     // for buildconfig construction
     buildConfig true
   }
+  
+  // Fix for Gradle 8.x task dependency issues
+  tasks.whenTaskAdded { task ->
+    if (task.name.contains('packageDebugResources') || task.name.contains('packageReleaseResources')) {
+      def variantName = task.name.contains('Debug') ? 'Debug' : 'Release'
+      def generateResValuesTask = tasks.findByName("generate${variantName}ResValues")
+      if (generateResValuesTask) {
+        task.dependsOn generateResValuesTask
+      }
+    }
+  }
 }
 
 repositories {
@@ -101,13 +112,32 @@ dependencies {
 
 // Fix task dependencies for packageDebugResources
 afterEvaluate {
+  tasks.withType(com.android.build.gradle.tasks.MergeResources).configureEach { task ->
+    if (task.name.contains('packageDebugResources')) {
+      def generateDebugResValues = tasks.findByName('generateDebugResValues')
+      if (generateDebugResValues) {
+        task.dependsOn generateDebugResValues
+        task.inputs.files(generateDebugResValues.outputs.files)
+      }
+    } else if (task.name.contains('packageReleaseResources')) {
+      def generateReleaseResValues = tasks.findByName('generateReleaseResValues')
+      if (generateReleaseResValues) {
+        task.dependsOn generateReleaseResValues
+        task.inputs.files(generateReleaseResValues.outputs.files)
+      }
+    }
+  }
+}
+
+// Alternative fix using task ordering
+gradle.projectsEvaluated {
   tasks.matching { task ->
     task.name.contains('packageDebugResources') || task.name.contains('packageReleaseResources')
-  }.configureEach { task ->
+  }.each { task ->
     def variantName = task.name.contains('Debug') ? 'Debug' : 'Release'
     def generateResValuesTask = tasks.findByName("generate${variantName}ResValues")
     if (generateResValuesTask) {
-      task.dependsOn generateResValuesTask
+      task.mustRunAfter generateResValuesTask
     }
   }
 }
