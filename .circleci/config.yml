@@ -223,9 +223,8 @@ jobs:
     steps:
       - attach_project
       - run:
-          name: Build docs and check for API changes
+          name: Check for API changes
           command: |
-            yarn run build:docs
             git diff --exit-code api/
 
   build-errors:

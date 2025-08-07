@@ -19,8 +19,6 @@
         "node ./scripts/substitute-constants-version.js ${RELEASE_VERSION}",
         "git add package.json",
         "git add constants/constants.src",
-        "yarn run build:docs",
-        "git add -f docs/api lib",
         "git add -f src/constants.ts",
         "git add -f ios/TwilioVoiceReactNativeConstants.h",
         "git add -f android/src/main/java/com/twiliovoicereactnative/CommonConstants.java",
